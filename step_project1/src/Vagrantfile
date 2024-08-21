@@ -1,5 +1,16 @@
 Vagrant.configure("2") do |config|
 
+    # Define variables for the whole Vagrantfile
+      DB_USER = ENV['DB_USER']
+      DB_PASS = ENV['DB_PASS']
+      DB_NAME = ENV['DB_NAME']
+      DB_HOST = ENV['DB_HOST']
+      DB_PORT = ENV['DB_PORT']
+      APP_USER = ENV['APP_USER']
+      APP_USER_PASS = ENV['APP_USER_PASS']
+      APP_DIR = ENV['APP_DIR']
+      PROJECT_DIR = ENV['PROJECT_DIR']
+
   # Налаштування для бази даних (DB_VM)
   config.vm.define "db_vm" do |db|
     db.vm.box = "bento/ubuntu-20.04"
@@ -35,18 +46,13 @@ Vagrant.configure("2") do |config|
       vb.cpus = 1
     end
 
-    # Передача змінних середовища у Vagrantfile для APP_VM
-    DB_HOST = ENV['DB_HOST']
-    DB_PORT = ENV['DB_PORT']
-    APP_USER = ENV['APP_USER']
-    APP_USER_PASS = ENV['APP_USER_PASS']
-    APP_DIR = ENV['APP_DIR']
-    PROJECT_DIR = ENV['PROJECT_DIR']
-
     # Провижининг с передачей переменных окружения
     app.vm.provision "shell", path: "app_script.sh", env: {
       "DB_HOST" => ENV['DB_HOST'],
       "DB_PORT" => ENV['DB_PORT'],
+      "DB_USER" => ENV['DB_USER'],       
+      "DB_PASS" => ENV['DB_PASS'],       
+      "DB_NAME" => ENV['DB_NAME'],       
       "APP_USER" => ENV['APP_USER'],
       "APP_USER_PASS" => ENV['APP_USER_PASS'],
       "APP_DIR" => ENV['APP_DIR'],
