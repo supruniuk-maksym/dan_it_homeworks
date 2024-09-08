@@ -9,6 +9,8 @@ To launch two virtual machines (database and application) using Vagrant on Paral
 * db_setup.sh
 * mysql_user_setup.sh
 * new_database_setup.sh
+
+  
 Before running the vagrant up command, make a copy of the environment variables for your setup in .zprofile or .bashrcIi:
 
 
