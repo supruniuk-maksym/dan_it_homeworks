@@ -62,11 +62,10 @@ def test_create_students():
 
 # Update the age of the second student (PATCH)
 def update_age(student_id, new_age):
-    # Формируем запрос на изменение возраста студента с ID 2
     response = requests.patch(f'{BASE_URL}/students/{student_id}', json={'age': new_age})
 
     if response.status_code == 200:
-        student = response.json()  # Получаем данные об обновленном студенте
+        student = response.json()
         print(f"Successfully updated student ID {student_id}: {student}")
     elif response.status_code == 404:
         print(f"Student with ID {student_id} not found.")
@@ -78,7 +77,7 @@ def update_all_student_data(student_id, new_age, new_first_name, new_last_name):
      response = requests.put(f'{BASE_URL}/students/{student_id}', json={'age': new_age, 'first_name': new_first_name, 'last_name': new_last_name})
 
      if response.status_code == 200:
-        student = response.json()  # Получаем данные об обновленном студенте
+        student = response.json()
         print(f"Successfully updated student ID {student_id}: {student}")
      elif response.status_code == 404:
         print(f"Student with ID {student_id} not found.")
@@ -96,23 +95,23 @@ def delete_student(student_id):
     else:
         print(f"Error: Unable to delete student. Status code: {response.status_code}")
 
-# Функция для получения всех студентов и записи результата в файл
+#Display the execution results in the console and write them to the results.txt file
 def get_all_students_and_save_to_file():
     response = requests.get(f'{BASE_URL}/students')
 
     if response.status_code == 200:
-        students = response.json()  # Преобразуем ответ в JSON
+        students = response.json()
 
-        # Выводим студентов в консоль
+        
         print("List of all students:")
         for student in students:
             print(student)
 
-        # Записываем студентов в файл results.txt
+        
         with open("results.txt", "w") as file:
             file.write("List of all students:\n")
             for student in students:
-                file.write(f"{student}\n")  # Записываем каждый словарь студента в файл
+                file.write(f"{student}\n")
             print("Students succesfully writed to the results.txt file")
 
     else:

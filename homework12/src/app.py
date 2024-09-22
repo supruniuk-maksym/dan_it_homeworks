@@ -24,25 +24,20 @@ import json
 def get_students():
     students = []
     
-    # Читаем данные из CSV файла
     with open('students.csv', mode='r') as file:
         reader = csv.DictReader(file)
         for row in reader:
             students.append(row)
     
-    # Получаем параметры id и last_name из запроса
     student_id = request.args.get('id')
     last_name = request.args.get('last_name')
 
-    # Отладочная информация: Выводим параметры запроса
     print(f"Received student_id: {student_id}, last_name: {last_name}")
     
     if student_id:
-        # Отладочная информация: Выводим студентов для сравнения
         for student in students:
             print(f"Comparing student ID {student['id']} with {student_id}")
         
-        # Фильтрация по ID
         student_by_id = next((student for student in students if str(student['id']) == str(student_id)), None)
         
         if student_by_id is None:
@@ -51,7 +46,6 @@ def get_students():
         return jsonify(student_by_id)
 
     elif last_name:
-        # Фильтрация по фамилии (приведение к нижнему регистру)
         students_by_last_name = [student for student in students if student['last_name'].strip().lower() == last_name.strip().lower()]
         
         if not students_by_last_name:
@@ -59,7 +53,6 @@ def get_students():
         
         return jsonify(students_by_last_name)
 
-    # Если ни id, ни last_name не были указаны, вернуть всех студентов
     return jsonify(students)
 
 
@@ -153,34 +146,29 @@ def post_students():
 def update_student(id):
     updated_data = request.get_json()
     
-    # Список полей, которые могут быть обновлены
     allowed_fields = ['first_name', 'last_name', 'age']
     
     students = []
-    updated_student = None  # Храним обновлённого студента для ответа
+    updated_student = None
     
     with open('students.csv', mode='r') as file:
         reader = csv.DictReader(file)
         for row in reader:
             if int(row['id']) == id:
-                # Обновляем только допустимые поля
                 for key in allowed_fields:
                     if key in updated_data:
                         row[key] = updated_data[key]
-                updated_student = row  # Сохраняем обновлённые данные студента
+                updated_student = row  
             students.append(row)
 
-    # Если студент с таким ID не найден, возвращаем 404
     if updated_student is None:
         return jsonify({'error': 'Student not found'}), 404
 
-    # Перезаписываем CSV с обновлёнными данными
     with open('students.csv', mode='w', newline='') as file:
         writer = csv.DictWriter(file, fieldnames=['id', 'first_name', 'last_name', 'age'])
         writer.writeheader()
         writer.writerows(students)
 
-    # Возвращаем полный объект студента после обновления
     return jsonify(updated_student), 200
 
 
