@@ -1,0 +1,13 @@
+List of all students:
+{'age': '25', 'first_name': 'Alice', 'id': '2', 'last_name': 'Smith'}
+{'age': '28', 'first_name': 'Koliya', 'id': '3', 'last_name': 'Boychuck'}
+{'age': '23', 'first_name': 'Diana', 'id': '4', 'last_name': 'Williams'}
+{'age': '24', 'first_name': 'Charlie', 'id': '5', 'last_name': 'Brown'}
+{'age': '25', 'first_name': 'Eva', 'id': '6', 'last_name': 'Jones'}
+{'age': '26', 'first_name': 'Frank', 'id': '7', 'last_name': 'Davis'}
+{'age': '27', 'first_name': 'Grace', 'id': '8', 'last_name': 'Miller'}
+{'age': '28', 'first_name': 'Hank', 'id': '9', 'last_name': 'Wilson'}
+{'age': '29', 'first_name': 'Ivy', 'id': '10', 'last_name': 'Moore'}
+{'age': '32', 'first_name': 'Jake', 'id': '11', 'last_name': 'Peralta'}
+{'age': '30', 'first_name': 'Amy', 'id': '12', 'last_name': 'Santiago'}
+{'age': '40', 'first_name': 'Terry', 'id': '13', 'last_name': 'Jeffords'}
