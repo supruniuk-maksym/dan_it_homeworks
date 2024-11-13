@@ -1,0 +1,74 @@
+pipeline {
+    agent any
+    options {
+        disableConcurrentBuilds() // stopped one time builds
+    }
+    environment {
+        DOCKER_CREDENTIALS = credentials('d595a332-eb95-4624-be34-47de5b59d558') 
+        DOCKER_IMAGE = "${DOCKER_CREDENTIALS_USR}/test-image:latest" 
+    }
+    stages {
+        stage('Pull the code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/supruniuk-maksym/forStep2' 
+                sh 'pwd'               
+                sh 'ls -la'            
+            }
+        }
+        stage('Build the Docker image on the Jenkins worker') {
+            agent {
+                label 'test' 
+            }
+            steps {
+                sh 'pwd'               
+                sh 'ls -la'            
+                sh "docker build -t $DOCKER_IMAGE -f /opt/jenkins_agent/workspace/test_node_pipeline/Dockerfile  /opt/jenkins_agent/workspace/test_node_pipeline"
+            }
+        }
+        stage('Run the Docker image with tests') {
+            agent {
+                label 'test'
+            }
+            steps {
+                script {
+                    try {
+                        
+                        sh "docker run --name test-container -d -p 0.0.0.0:3000:3000 $DOCKER_IMAGE"
+                        sh "docker exec test-container npm test"
+                        currentBuild.result = 'SUCCESS'
+                    } catch (Exception e) {
+                        echo 'Tests failed'
+                        currentBuild.result = 'FAILURE'
+                        throw e // завершуємо з помилкой якщо тест не пійшов
+                    } 
+                    finally {
+                        
+                        sh "docker rm -f test-container || true"
+                    }
+                }
+            }
+        }
+        stage('If the tests are successful, log in to Docker Hub') {
+            when {
+                expression { currentBuild.result == 'SUCCESS' } 
+            }
+            steps {
+                script {
+                    sh "echo $DOCKER_CREDENTIALS_PSW | docker login -u $DOCKER_CREDENTIALS_USR --password-stdin"
+                    sh "docker push $DOCKER_IMAGE"                    sh "docker logout"
+                }
+            }
+        }
+    }
+     post {
+        always {
+            
+            sh 'docker logout'
+        }
+        cleanup {
+            
+            sh 'rm -f Dockerfile'
+        }
+    }
+}
+
