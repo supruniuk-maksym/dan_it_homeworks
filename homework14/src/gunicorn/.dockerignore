@@ -1,0 +1,10 @@
+results.txt 
+test_requests.py
+*.log
+*.md
+.git/
+__pycache__/
+tests/
+venv/
+docker-compose.yml
+
