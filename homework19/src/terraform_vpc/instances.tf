@@ -18,7 +18,7 @@ resource "aws_instance" "private_instance" {
   subnet_id     = aws_subnet.private_subnet.id
   security_groups = [aws_security_group.private_sg.id]
 
-  associate_public_ip_address = false  # Нет публичного IP
+  associate_public_ip_address = false
 
   tags = {
     Name = "PrivateEC2"
