@@ -1,0 +1,54 @@
+---
+- name: Setup Docker and Nginx
+  hosts: servers
+  become: true
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+
+    - name: Add Docker GPG key
+      get_url:
+        url: "https://download.docker.com/linux/ubuntu/gpg"
+        dest: "/tmp/docker_gpg"
+        mode: '0644'
+
+    - name: Add Docker GPG key to apt
+      shell: cat /tmp/docker_gpg | sudo apt-key add -
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+        update_cache: yes
+
+    - name: Install Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-{{ ansible_system | lower }}-{{ ansible_architecture }}"
+        dest: "/usr/local/bin/docker-compose"
+        mode: 'u+x,g+x'
+
+    - name: Create Docker Compose directory
+      file:
+        path: /opt/nginx
+        state: directory
+
+    - name: Create Docker Compose file
+      copy:
+        dest: /opt/nginx/docker-compose.yml
+        content: |
+          version: '3'
+          services:
+            nginx:
+              image: nginx:latest
+              ports:
+                - "80:80"
+
+    - name: Start Nginx with Docker Compose
+      shell: "docker-compose -f /opt/nginx/docker-compose.yml up -d"
