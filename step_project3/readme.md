@@ -21,4 +21,3 @@ The Goal of Step_project3:
 Note: all deployment code (Terrafrom, Ansible, Jenkinsfile etc) should be stored in the GitHub repository.
 =====================================================================================================================================
 
-
