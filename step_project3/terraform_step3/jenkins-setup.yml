@@ -1,0 +1,175 @@
+- name: Install and configure Jenkins in Docker
+  hosts: master
+  become: yes  
+
+  tasks:
+    - name: Update packages and install dependencies
+      apt:
+        update_cache: yes
+        name: 
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - openjdk-17-jdk
+          - wget
+
+    - name: Set JAVA_HOME for Jenkins
+      lineinfile:
+        path: /etc/environment
+        line: 'JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64'
+        create: yes
+
+    - name: Create directory for Docker GPG key
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Add Docker GPG key
+      get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.gpg
+        mode: '0644'
+
+    - name: Add Docker repository
+      shell: |
+        echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] \
+        https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
+        tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+    - name: Update package lists and install Docker
+      apt:
+        update_cache: yes
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+
+    - name: Ensure Docker service is running
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Create jenkins group
+      group:
+        name: jenkins
+        gid: 9999
+        state: present
+
+    - name: Create jenkins user
+      user:
+        name: jenkins
+        uid: 9999
+        group: jenkins
+        home: /home/jenkins
+        shell: /bin/bash
+        state: present
+
+    - name: Add jenkins user to Docker group
+      user:
+        name: jenkins
+        groups: docker
+        append: yes
+
+    - name: Create Jenkins home directory
+      file:
+        path: /home/jenkins/jenkins_home
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: '0755'
+
+    - name: Create Docker Compose file for Jenkins
+      copy:
+        dest: /home/jenkins/docker-compose-jenkins.yml
+        owner: jenkins
+        group: jenkins
+        mode: '0644'
+        content: |
+          version: "3.9"
+          services:
+            jenkins:
+              container_name: myjenkins
+              image: jenkins/jenkins:lts
+              restart: unless-stopped
+              ports:
+                - "8082:8080"
+                - "50000:50000"
+              volumes:
+                - /home/jenkins/jenkins_home:/var/jenkins_home
+                - /var/run/docker.sock:/var/run/docker.sock
+              environment:
+                - JENKINS_OPTS=--httpPort=8080
+              user: "9999:9999"
+              privileged: true
+
+    - name: Start Jenkins container
+      shell: sudo -u jenkins docker compose -f /home/jenkins/docker-compose-jenkins.yml up -d
+
+    - name: Wait for Jenkins to start
+      pause:
+        minutes: 2
+
+    - name: Copy Jenkins initial admin password to host
+      shell: docker cp myjenkins:/var/jenkins_home/secrets/initialAdminPassword /home/ubuntu/jenkins_admin_password
+      ignore_errors: yes
+
+    - name: Read Jenkins admin password
+      command: cat /home/ubuntu/jenkins_admin_password
+      register: jenkins_password
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Display Jenkins admin password
+      debug:
+        msg: "Jenkins admin password: {{ jenkins_password.stdout | default('Could not retrieve password') }}"
+
+    - name: Install and configure Nginx as reverse proxy
+      block:
+        - name: Install Nginx
+          apt:
+            name: nginx
+            state: present
+
+        - name: Configure Nginx as reverse proxy for Jenkins
+          copy:
+            dest: /etc/nginx/sites-available/jenkins
+            content: |
+              server {
+                  listen 80;
+                  server_name _;
+
+                  location / {
+                      proxy_pass http://localhost:8082;
+                      proxy_set_header Host $host;
+                      proxy_set_header X-Real-IP $remote_addr;
+                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto $scheme;
+                      proxy_set_header Upgrade $http_upgrade;
+                      proxy_set_header Connection "Upgrade";
+                  }
+              }
+          notify:
+            - Restart Nginx
+
+        - name: Enable Nginx config
+          file:
+            src: /etc/nginx/sites-available/jenkins
+            dest: /etc/nginx/sites-enabled/jenkins
+            state: link
+
+        - name: Remove default Nginx config
+          file:
+            path: /etc/nginx/sites-enabled/default
+            state: absent
+          notify:
+            - Restart Nginx
+
+  handlers:
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted

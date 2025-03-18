@@ -1,0 +1,56 @@
+---
+- name: Setup Jenkins Agent
+  hosts: worker
+  become: yes
+  vars:
+    docker_group: docker
+    docker_compose_version: "v2.20.2"
+
+  tasks:
+    - name: Update apt packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install required packages
+      apt:
+        name:
+          - openjdk-17-jdk
+          - docker.io
+          - git
+          - python3-pip
+          - curl
+          - unzip
+        state: present
+
+    - name: Ensure Jenkins agent directory exists
+      file:
+        path: /home/ubuntu/jenkins-agent
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Install Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-linux-x86_64"
+        dest: "/usr/local/bin/docker-compose"
+        mode: '0755'
+
+    - name: Ensure ubuntu user owns Docker socket
+      file:
+        path: /var/run/docker.sock
+        owner: ubuntu
+        group: "{{ docker_group }}"
+        mode: '0660'
+
+    - name: Restart Docker
+      systemd:
+        name: docker
+        state: restarted
