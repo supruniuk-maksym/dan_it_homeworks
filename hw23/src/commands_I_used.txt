@@ -1,0 +1,13 @@
+#	Command                 					Purpose
+1	minikube start --driver=docker --nodes=3		Started a Minikube cluster with 3 nodes
+2	kubectl run nginx-pod --image=nginx			Created a pod running the official nginx image
+3	kubectl get pods					Verified that the pod is running
+4	kubectl expose pod nginx-pod --type=NodePort --port=80	Created a Service to expose port 80 of the pod to the outside
+5	kubectl get svc						Checked which NodePort was assigned
+6	minikube ip						Got the IP address of the Minikube cluster
+7	minikube ssh -n minikube-m02				Connected to a specific node inside the cluster
+8	curl http://localhost:<NodePort>			Verified nginx responds internally on the node
+9	minikube tunnel						Started a tunnel to expose services from the cluster to the host system
+10	minikube service nginx-pod				Opened the exposed service in a browser automatically (and showed the URL)
+11	http://127.0.0.1:<TunnelPort>				Opened nginx in a browser via local tunnel (Docker driver limitation on macOS)
+

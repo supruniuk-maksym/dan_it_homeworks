@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: random-string-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: random-string-app
+  template:
+    metadata:
+      labels:
+        app: random-string-app
+    spec:
+      containers:
+        - name: random-string-container
+          image: supruniukmaksym/random-string-app:v1
+          ports:
+            - containerPort: 8082
+      imagePullSecrets:
+        - name: regcred
+
