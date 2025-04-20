@@ -1,0 +1,160 @@
+stages:
+  - build
+  - patch
+  - test
+  - deploy
+
+variables:
+  IMAGE_TAG: "$CI_COMMIT_SHORT_SHA-$CI_PIPELINE_IID"
+  IMAGE_NAME: step-k8-app:$IMAGE_TAG
+
+build:
+  stage: build
+  tags:
+    - mac_local
+  script:
+    - echo 'Building Docker image with tag:' "$IMAGE_NAME"
+    - docker build -t $IMAGE_NAME .
+    - echo "Loading image into Minikube"
+    - /opt/homebrew/bin/minikube image load $IMAGE_NAME
+    - echo "$IMAGE_NAME" > image_name.txt
+    - cat image_name.txt
+  artifacts:
+    paths:
+      - image_name.txt
+
+
+prepare-deploy:
+  stage: patch
+  tags:
+    - mac_local
+  dependencies: [build]   
+  script:
+    - echo "Loading IMAGE_NAME from file"
+    - IMAGE_NAME=$(cat image_name.txt)
+    - echo "Replacing image tag in app-deployment.yaml"
+    - |
+      sed "s|image: step-k8-app*|image: $IMAGE_NAME|" app-deployment.yaml > app-deployment-patched.yaml
+    - echo "Resulting image line:"
+    - grep image app-deployment-patched.yaml
+    - cat app-deployment-patched.yaml
+    
+  artifacts:
+    paths:
+      - app-deployment-patched.yaml
+
+test:
+  stage: test
+  tags:
+    - mac_local
+  dependencies: [prepare-deploy]
+  script:
+    - |
+      echo "Deploying to test environment"
+      /opt/homebrew/bin/kubectl apply -f mysql-pvc.yaml -n dev-ns
+      /opt/homebrew/bin/kubectl apply -f mysql-deployment.yaml -n dev-ns
+      /opt/homebrew/bin/kubectl apply -f mysql-service.yaml -n dev-ns
+      /opt/homebrew/bin/kubectl apply -f app-deployment-patched.yaml -n dev-ns
+      /opt/homebrew/bin/kubectl rollout status deployment flask-app -n dev-ns
+
+      echo "Waiting 10s for pod to be ready"
+      sleep 10
+
+      POD=$(/opt/homebrew/bin/kubectl get pod -n dev-ns -l app=flask-app -o jsonpath="{.items[0].metadata.name}")
+      echo "Running tests inside pod: $POD"
+
+      if /opt/homebrew/bin/kubectl exec -n dev-ns "$POD" -- python3 -m unittest discover -s tests; then
+        echo "Tests passed successfully"
+      else
+        echo "Tests failed"
+        exit 1
+      fi
+
+deploy:
+  stage: deploy
+  tags:
+    - mac_local
+  script:
+    - echo "Deploying to Kubernetes"
+    - /opt/homebrew/bin/kubectl apply -f mysql-pvc.yaml -n dev-ns
+    - /opt/homebrew/bin/kubectl apply -f mysql-deployment.yaml -n dev-ns
+    - /opt/homebrew/bin/kubectl apply -f mysql-service.yaml -n dev-ns
+    - /opt/homebrew/bin/kubectl apply -f app-deployment-patched.yaml -n dev-ns
+    - /opt/homebrew/bin/kubectl rollout status deployment flask-app -n dev-ns
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
