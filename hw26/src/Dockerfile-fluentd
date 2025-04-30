@@ -1,0 +1,6 @@
+FROM --platform=linux/arm64 fluent/fluentd:v1.16-1
+
+USER root
+RUN gem install fluent-plugin-elasticsearch -v  5.4.3
+USER fluent
+
