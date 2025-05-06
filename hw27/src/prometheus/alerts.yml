@@ -1,0 +1,30 @@
+groups:
+  - name: system_alerts
+    rules:
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"}) * 100 < 15
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space"
+          description: "Вільного місця менше 15% на {{ $labels.instance }}."
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100) > 80
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU load"
+          description: "CPU навантаження понад 80% на {{ $labels.instance }}."
+
+      - alert: TargetDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Target is down"
+          description: "Ціль {{ $labels.instance }} недоступна."
+

@@ -1,0 +1,19 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: telegram
+  group_wait: 10s
+  group_interval: 30s
+  repeat_interval: 1h
+
+receivers:
+  - name: telegram
+    telegram_configs:
+      - bot_token: '7452991929:AAFd8rrvihXzwfUo9NpcLKV2Y3ACpiO8vIk'
+        chat_id: 280188704
+        message: |
+          {{ .Status | toUpper }}: {{ .CommonAnnotations.summary }}
+          {{ .CommonLabels.instance }}
+          {{ .CommonAnnotations.description }}
+
